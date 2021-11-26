@@ -187,7 +187,8 @@ namespace Testiamte
                 MainWindow.dispatcherTimerToken.Start();
                 // ISSUE: reference to a compiler-generated method
                 // MainWindow.OnCameraDeviceChanged += new EventHandler<EventArgs>(mainWindow.Window_Loaded);
-                mainWindow.LockScreen();
+                
+                // mainWindow.LockScreen();
             }
             catch (Exception ex)
             {
@@ -746,6 +747,8 @@ namespace Testiamte
 
         private void Exit_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 
+        // LockScreen is originally called by Window_Loaded, but no longer used.
+        // Disabling allows user to use Alt+Tab window switching.
         private void LockScreen()
         {
             ProcessModule mainModule = Process.GetCurrentProcess().MainModule;
