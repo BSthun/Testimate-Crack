@@ -1,0 +1,14 @@
+<Window x:Class="Testiamte.Setting"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Testiamte"
+        Title="Setting" Height="300" Width="300" Icon="/testimate_fav-icon.png">
+  <StackPanel Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="{DynamicResource {x:Static SystemColors.ScrollBarBrushKey}}">
+    <TextBlock Text="Select Camera devices" Margin="0" Background="White"/>
+    <ComboBox x:Name="deviceList" TextBlock.TextAlignment="Center" Text="dsfssd" IsEditable="False" Width="190"
+              Height="25" DisplayMemberPath="Name"/>
+  </StackPanel>
+</Window>
