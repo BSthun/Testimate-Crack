@@ -312,22 +312,6 @@ namespace Testiamte
 
         private bool CheckVM()
         {
-            using (ManagementObjectSearcher managementObjectSearcher = new ManagementObjectSearcher("Select * from Win32_ComputerSystem"))
-            {
-                using (ManagementObjectCollection objectCollection = managementObjectSearcher.Get())
-                {
-                    using (ManagementObjectCollection.ManagementObjectEnumerator enumerator = objectCollection.GetEnumerator())
-                    {
-                        while (enumerator.MoveNext())
-                        {
-                            ManagementBaseObject current = enumerator.Current;
-                            string lower = current["Manufacturer"].ToString().ToLower();
-                            if (lower == "microsoft corporation" && current["Model"].ToString().ToUpperInvariant().Contains("VIRTUAL") || lower.Contains("vmware") || current["Model"].ToString() == "VirtualBox")
-                                return true;
-                        }
-                    }
-                }
-            }
             return false;
         }
 
