@@ -316,9 +316,13 @@
       <DependentUpon>mainwindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="credit.xaml.cs">
+      <DependentUpon>credit.xaml</DependentUpon>
+    </Compile>
     <Compile Include="setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Util.cs" />
     <Compile Include="VideoCaptureConfig.cs" />
     <Compile Include="ViewModel\CameraDevice.cs" />
     <Compile Include="ViewModel\Capture.cs" />
@@ -353,6 +357,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="mainwindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="credit.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
