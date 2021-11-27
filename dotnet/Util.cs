@@ -23,12 +23,11 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Markup;
-using System.Windows.Media;
 using System.Windows.Threading;
 using Testiamte.Enum;
 using Testiamte;
-using System.Runtime.InteropServices;
-using System.Drawing;
+using Newtonsoft.Json.Linq;
+using Microsoft.Web.WebView2.Wpf;
 using System.Drawing.Imaging;
 
 namespace Testimate
@@ -36,37 +35,57 @@ namespace Testimate
     internal class Util
     {
         private static VideoCapture videoCapture;
-        public static System.Drawing.Image CaptureWindow(IntPtr handle)
+
+        public static Bitmap CaptureWindowScreen(IntPtr handle)
         {
-            // get te hDC of the target window
-            IntPtr hdcSrc = User32.GetWindowDC(handle);
-            // get the size
-            User32.RECT windowRect = new User32.RECT();
-            User32.GetWindowRect(handle, ref windowRect);
-            int width = windowRect.right - windowRect.left;
-            int height = windowRect.bottom - windowRect.top;
-            // create a device context we can copy to
-            IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
-            // create a bitmap we can copy it to,
-            // using GetDeviceCaps to get the width/height
-            IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
-            // select the bitmap object
-            IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
-            // bitblt over
-            GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, GDI32.SRCCOPY);
-            // restore selection
-            GDI32.SelectObject(hdcDest, hOld);
-            // clean up 
-            GDI32.DeleteDC(hdcDest);
-            User32.ReleaseDC(handle, hdcSrc);
-            // get a .NET image object for it
-            System.Drawing.Image img = System.Drawing.Image.FromHbitmap(hBitmap);
-            // free up the Bitmap object
-            GDI32.DeleteObject(hBitmap);
-            return img;
+            var rect = new User32.RECT();
+            User32.GetWindowRect(handle, ref rect);
+            var bounds = new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+            var result = new Bitmap(bounds.Width, bounds.Height);
+
+            using (var graphics = Graphics.FromImage(result))
+            {
+                graphics.CopyFromScreen(new System.Drawing.Point(bounds.Left, bounds.Top), System.Drawing.Point.Empty, bounds.Size);
+            }
+
+            return result;
         }
 
-        public static string CaptureWindowToFile(IntPtr handle, ImageFormat format)
+        public static Bitmap CaptureWindowRegion(IntPtr handle)
+        {
+            User32.RECT rc = new User32.RECT();
+            User32.GetWindowRect(handle, ref rc);
+
+            Bitmap bmp = new Bitmap(rc.right - rc.left, rc.bottom - rc.top, PixelFormat.Format32bppArgb);
+            Graphics gfxBmp = Graphics.FromImage(bmp);
+            IntPtr hdcBitmap;
+            try
+            {
+                hdcBitmap = gfxBmp.GetHdc();
+            }
+            catch
+            {
+                return null;
+            }
+            bool succeeded = User32.PrintWindow(handle, hdcBitmap, 0);
+            gfxBmp.ReleaseHdc(hdcBitmap);
+            if (!succeeded)
+            {
+                gfxBmp.FillRectangle(new SolidBrush(Color.Gray), new Rectangle(System.Drawing.Point.Empty, bmp.Size));
+            }
+            IntPtr hRgn = GDI32.CreateRectRgn(0, 0, 0, 0);
+            User32.GetWindowRgn(handle, hRgn);
+            Region region = Region.FromHrgn(hRgn);
+            if (!region.IsEmpty(gfxBmp))
+            {
+                gfxBmp.ExcludeClip(region);
+                gfxBmp.Clear(Color.Transparent);
+            }
+            gfxBmp.Dispose();
+            return bmp;
+        }
+
+        public static string CaptureWindowToFile(IntPtr handle, WebView2 webview)
         {
             string str = Path.Combine(Path.GetTempPath(), "Testimate", "Screenshots");
             if (!Directory.Exists(str))
@@ -74,18 +93,94 @@ namespace Testimate
             string path2 = "ScreenCapture-" + DateTime.Now.ToString("ddMMyyyy-hhmmss") + ".png";
             string filename = Path.Combine(str, path2);
 
-            System.Drawing.Image img = CaptureWindow(handle);
-            img.Save(filename, format);
+            // Method 1: Make the window foreground and capture it.
 
+            // User32.SetForegroundWindow(handle);
+            // System.Drawing.Image img = CaptureWindow(handle);
+            // img.Save(filename, ImageFormat.Png);
+
+            // Method 2: Window region
+            System.Drawing.Image img = CaptureWindowRegion(handle);
+            OverlayWebview(filename, img, webview);
             return filename;
         }
 
-        public static string CaptureWindowWrapper()
+        public static async void OverlayWebview(string filename, System.Drawing.Image window, WebView2 webview)
         {
-            string wrap = CaptureWindowToFile(WinGetHandle(), ImageFormat.Png);
-            return wrap;
+            string r3 = await webview.CoreWebView2.CallDevToolsProtocolMethodAsync("Page.captureScreenshot", "{}");
+            JObject o3 = JObject.Parse(r3);
+            JToken data = o3["data"];
+            string data_str = data.ToString();
+            System.Drawing.Image img = Util.Base64Image(data_str);
+
+            // Hard-coded border removal (14px margin)
+            System.Drawing.Image comp = new Bitmap(window.Width - 14, window.Height - 14);
+            using (Graphics gr = Graphics.FromImage(comp))
+            {
+                gr.DrawImage(window, new System.Drawing.Point(-7, -7));
+                gr.DrawImage(img, new System.Drawing.Point((window.Width - img.Width - 14) / 2, window.Height - img.Height - 14));
+            }
+
+            System.Drawing.Image compResized = FixedSize(comp, 1280, 720);
+
+            compResized.Save(filename, ImageFormat.Png);
         }
 
+        static System.Drawing.Image FixedSize(System.Drawing.Image imgPhoto, int Width, int Height)
+        {
+            int sourceWidth = imgPhoto.Width;
+            int sourceHeight = imgPhoto.Height;
+            int sourceX = 0;
+            int sourceY = 0;
+            int destX = 0;
+            int destY = 0;
+
+            float nPercent = 0;
+            float nPercentW = 0;
+            float nPercentH = 0;
+
+            nPercentW = ((float)Width / (float)sourceWidth);
+            nPercentH = ((float)Height / (float)sourceHeight);
+            if (nPercentH < nPercentW)
+            {
+                nPercent = nPercentH;
+                destX = System.Convert.ToInt16((Width -
+                              (sourceWidth * nPercent)) / 2);
+            }
+            else
+            {
+                nPercent = nPercentW;
+                destY = System.Convert.ToInt16((Height -
+                              (sourceHeight * nPercent)) / 2);
+            }
+
+            int destWidth = (int)(sourceWidth * nPercent);
+            int destHeight = (int)(sourceHeight * nPercent);
+
+            Bitmap bmPhoto = new Bitmap(Width, Height,
+                              PixelFormat.Format24bppRgb);
+            bmPhoto.SetResolution(imgPhoto.HorizontalResolution,
+                             imgPhoto.VerticalResolution);
+
+            Graphics grPhoto = Graphics.FromImage(bmPhoto);
+            grPhoto.Clear(Color.White);
+            grPhoto.InterpolationMode =
+                    InterpolationMode.HighQualityBicubic;
+
+            grPhoto.DrawImage(imgPhoto,
+                new Rectangle(destX, destY, destWidth, destHeight),
+                new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight),
+                GraphicsUnit.Pixel);
+
+            grPhoto.Dispose();
+            return bmPhoto;
+        }
+
+        public static string CaptureWindowWrapper(WebView2 webview)
+        {
+            string wrap = CaptureWindowToFile(WinGetHandle(), webview);
+            return wrap;
+        }
 
         public static IntPtr WinGetHandle(string wName = "MainWindow")
         {
@@ -110,7 +205,7 @@ namespace Testimate
             double virtualScreenTop = SystemParameters.VirtualScreenTop;
             double virtualScreenWidth = SystemParameters.VirtualScreenWidth;
             double virtualScreenHeight = SystemParameters.VirtualScreenHeight;
-            PresentationSource presentationSource = PresentationSource.FromVisual((Visual)w);
+            PresentationSource presentationSource = PresentationSource.FromVisual(w);
             double num1 = 1.0;
             double num2 = 1.0;
             if (presentationSource != null)
@@ -126,7 +221,7 @@ namespace Testimate
             string path2 = "ScreenCapture-" + DateTime.Now.ToString("ddMMyyyy-hhmmss") + ".png";
             string filename = Path.Combine(str, path2);
             Bitmap bitmap1 = new Bitmap((int)num3, (int)num4);
-            using (Graphics graphics = Graphics.FromImage((System.Drawing.Image)bitmap1))
+            using (Graphics graphics = Graphics.FromImage(bitmap1))
             {
                 // this.Opacity = 0.0;
                 graphics.CopyFromScreen((int)virtualScreenLeft, (int)virtualScreenTop, 0, 0, bitmap1.Size);
@@ -159,7 +254,7 @@ namespace Testimate
                 using (Graphics graphics = Graphics.FromImage((System.Drawing.Image)bitmap2))
                 {
                     graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    graphics.DrawImage((System.Drawing.Image)bitmap1, new Rectangle(x2, y2, width, height), new Rectangle(x1, y1, (int)num3, (int)num4), GraphicsUnit.Pixel);
+                    graphics.DrawImage(bitmap1, new Rectangle(x2, y2, width, height), new Rectangle(x1, y1, (int)num3, (int)num4), GraphicsUnit.Pixel);
                     bitmap2.Save(filename);
                 }
             }
@@ -222,25 +317,26 @@ namespace Testimate
             {
             }
         }
+
+        public static System.Drawing.Image Base64Image(string base64)
+        {
+            //data:image/gif;base64,
+            //this image is a single pixel (black)
+            byte[] bytes = Convert.FromBase64String(base64);
+
+            System.Drawing.Image image;
+            using (MemoryStream ms = new MemoryStream(bytes))
+            {
+                image = System.Drawing.Image.FromStream(ms);
+            }
+
+            return image;
+        }
+
         private class GDI32
         {
-
-            public const int SRCCOPY = 0x00CC0020; // BitBlt dwRop parameter
             [DllImport("gdi32.dll")]
-            public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest,
-                int nWidth, int nHeight, IntPtr hObjectSource,
-                int nXSrc, int nYSrc, int dwRop);
-            [DllImport("gdi32.dll")]
-            public static extern IntPtr CreateCompatibleBitmap(IntPtr hDC, int nWidth,
-                int nHeight);
-            [DllImport("gdi32.dll")]
-            public static extern IntPtr CreateCompatibleDC(IntPtr hDC);
-            [DllImport("gdi32.dll")]
-            public static extern bool DeleteDC(IntPtr hDC);
-            [DllImport("gdi32.dll")]
-            public static extern bool DeleteObject(IntPtr hObject);
-            [DllImport("gdi32.dll")]
-            public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+            public static extern IntPtr CreateRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect);
         }
 
         private class User32
@@ -253,14 +349,20 @@ namespace Testimate
                 public int right;
                 public int bottom;
             }
-            [DllImport("user32.dll")]
-            public static extern IntPtr GetDesktopWindow();
-            [DllImport("user32.dll")]
-            public static extern IntPtr GetWindowDC(IntPtr hWnd);
-            [DllImport("user32.dll")]
-            public static extern IntPtr ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
             [DllImport("user32.dll")]
             public static extern IntPtr GetWindowRect(IntPtr hWnd, ref RECT rect);
+
+            [DllImport("user32.dll")]
+            public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
+
+            [DllImport("user32.dll")]
+            public static extern int GetWindowRgn(IntPtr hWnd, IntPtr hRgn);
         }
     }
+
 }

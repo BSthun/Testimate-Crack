@@ -166,7 +166,7 @@ namespace Testiamte
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Credit credit = new Credit();
+            Credit credit = new Credit(this.webView);
             credit.ShowDialog();
 
             MainWindow mainWindow = this;
@@ -189,7 +189,7 @@ namespace Testiamte
                 MainWindow.dispatcherTimerToken.Start();
                 // ISSUE: reference to a compiler-generated method
                 // MainWindow.OnCameraDeviceChanged += new EventHandler<EventArgs>(mainWindow.Window_Loaded);
-                
+
                 // mainWindow.LockScreen();
             }
             catch (Exception ex)
@@ -198,13 +198,24 @@ namespace Testiamte
             }
         }
 
-        
+
         private bool CheckVM()
         {
             return false;
         }
 
-        private async void WebView_Initialized() => await this.webView.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync((string)null, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Testimate", (CoreWebView2EnvironmentOptions)null));
+        private async void WebView_Initialized()
+        {
+            CoreWebView2EnvironmentOptions options = new CoreWebView2EnvironmentOptions();
+            options.AdditionalBrowserArguments = "--disable-gpu";
+            await this.webView.EnsureCoreWebView2Async(
+                await CoreWebView2Environment.CreateAsync(
+                    (string)null,
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Testimate",
+                    options
+                    )
+                );
+        }
 
         private async Task<ExamInfo> GetTokenFromJsAsync()
         {
@@ -247,8 +258,8 @@ namespace Testiamte
                     dataLogs = (List<Log>)null;
                     this.isStart = true;
                 }
-                string filePath = Util.CaptureScreen(this);
-                string pathCamera = Util.CaptureWindowWrapper();
+                string filePath = Util.CaptureWindowWrapper(this.webView);
+                string pathCamera = Util.CaptureCamera();
                 UploadFile uplaodCaptureScreen = await this.UploadImageFileAsync(filePath);
                 UploadFile webcam = await this.UploadImageFileAsync(pathCamera);
                 //       if (!string.IsNullOrEmpty(pathCamera))
