@@ -65,7 +65,8 @@ namespace Testimate
             GDI32.DeleteObject(hBitmap);
             return img;
         }
-        public static void CaptureWindowToFile(IntPtr handle, ImageFormat format)
+
+        public static string CaptureWindowToFile(IntPtr handle, ImageFormat format)
         {
             string str = Path.Combine(Path.GetTempPath(), "Testimate", "Screenshots");
             if (!Directory.Exists(str))
@@ -75,6 +76,32 @@ namespace Testimate
 
             System.Drawing.Image img = CaptureWindow(handle);
             img.Save(filename, format);
+
+            return filename;
+        }
+
+        public static string CaptureWindowWrapper()
+        {
+            string wrap = CaptureWindowToFile(WinGetHandle(), ImageFormat.Png);
+            return wrap;
+        }
+
+
+        public static IntPtr WinGetHandle(string wName = "MainWindow")
+        {
+            string names = String.Empty;
+            foreach (Process pList in Process.GetProcesses())
+            {
+                if (pList.MainWindowTitle == "")
+                    continue;
+                names += pList.MainWindowTitle + "\n";
+                if (pList.MainWindowTitle.Contains(wName))
+                {
+                    return pList.MainWindowHandle;
+                }
+            }
+            MessageBox.Show(names, "No window handle found", MessageBoxButton.OK, MessageBoxImage.Error);
+            return IntPtr.Zero;
         }
 
         public static string CaptureScreen(System.Windows.Window w)

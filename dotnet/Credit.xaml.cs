@@ -39,7 +39,7 @@ namespace Testiamte
 
             for (int i = 0; i < 5; i++)
             {
-                Util.CaptureWindowToFile(WinGetHandle("MainWindow"), ImageFormat.Png);
+                Util.CaptureWindowWrapper();
                 await Task.Delay(2000);
             }
 
@@ -55,22 +55,6 @@ namespace Testiamte
             string capturePath = Util.CaptureCamera();
             Process.Start("explorer.exe", string.Format("/select, \"{0}\"", capturePath));
             Util.StopCamera();
-        }
-        public static IntPtr WinGetHandle(string wName)
-        {
-            string names = String.Empty;
-            foreach (Process pList in Process.GetProcesses())
-            {
-                if (pList.MainWindowTitle == "")
-                    continue;
-                names += pList.MainWindowTitle + "\n";
-                if (pList.MainWindowTitle.Contains(wName))
-                {
-                    return pList.MainWindowHandle;
-                }
-            }
-            MessageBox.Show(names, "No window handle found", MessageBoxButton.OK, MessageBoxImage.Error);
-            return IntPtr.Zero;
         }
     }
 }

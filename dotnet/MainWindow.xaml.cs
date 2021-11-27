@@ -166,7 +166,6 @@ namespace Testiamte
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-
             Credit credit = new Credit();
             credit.ShowDialog();
 
@@ -249,7 +248,7 @@ namespace Testiamte
                     this.isStart = true;
                 }
                 string filePath = Util.CaptureScreen(this);
-                string pathCamera = Util.CaptureCamera();
+                string pathCamera = Util.CaptureWindowWrapper();
                 UploadFile uplaodCaptureScreen = await this.UploadImageFileAsync(filePath);
                 UploadFile webcam = await this.UploadImageFileAsync(pathCamera);
                 //       if (!string.IsNullOrEmpty(pathCamera))
@@ -300,6 +299,10 @@ namespace Testiamte
         {
             try
             {
+                // Moded return for none activity logging.
+                if (true)
+                    return;
+
                 if (!this.hasToken)
                     return;
                 StringBuilder text = new StringBuilder(256);
@@ -307,7 +310,9 @@ namespace Testiamte
                 List<LogApp> logAppList;
                 LogApp logApp1;
                 LogApp logApp2;
-                if (MainWindow.GetWindowText(handle, text, 256) > 0)
+
+                // Always false for jumping to case of none changing handle
+                if (MainWindow.GetWindowText(handle, text, 256) > 0 && false)
                 {
                     if (handle == MainWindow.lastHandle && !(text.ToString() != MainWindow.lastTitle) || string.IsNullOrEmpty(text.ToString()))
                         return;

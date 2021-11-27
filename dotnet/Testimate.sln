@@ -7,14 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testimate", "Testimate.cspr
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Debug|x64.ActiveCfg = Debug|x64
+		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Debug|x64.Build.0 = Debug|x64
+		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Release|x64.ActiveCfg = Release|x64
+		{30282B1C-4299-4E75-B3DB-FC82C2FF04BF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
