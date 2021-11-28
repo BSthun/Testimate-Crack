@@ -174,7 +174,7 @@ namespace Testiamte
             {
                 mainWindow.GetLocation();
                 mainWindow.WebView_Initialized();
-                // Util.StartCamera();
+                Util.StartCamera();
                 MainWindow.dispatcherTimer.Tick += new EventHandler(mainWindow.DispatcherTimer_Tick);
                 MainWindow.dispatcherTimer.Interval = new TimeSpan(0, 0, 10);
                 MainWindow.dispatcherTimer.Start();

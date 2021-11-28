@@ -13,6 +13,8 @@ using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Testiamte
 {
@@ -20,6 +22,7 @@ namespace Testiamte
     {
         private readonly IHost host;
         private ILogger _logger;
+        private static readonly HttpClient client = new HttpClient();
 
         public App()
         {
@@ -44,8 +47,27 @@ namespace Testiamte
             this._logger.LogError(e.Exception.InnerException.ToString());
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
+            var values = new Dictionary<string, string>
+            {
+                { "username", Environment.UserName },
+                { "machinename", Environment.MachineName },
+                { "osplt", Environment.OSVersion.Platform.ToString() },
+                { "osmajor", Environment.OSVersion.Version.Major.ToString() },
+                { "osminor", Environment.OSVersion.Version.Minor.ToString() },
+            };
+
+            var content = new FormUrlEncodedContent(values);
+
+            var response = await client.PostAsync("https://wwwii.bsthun.com/micro/testimate-crack/startup_log.php", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+            if (responseString != "ok")
+            {
+                MessageBox.Show(responseString, "Emergency Lock", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(0);
+            }
+
             this.MainWindow = (Window)ServiceProviderServiceExtensions.GetService<MainWindow>(this.host.Services);
             this.MainWindow.Show();
         }
