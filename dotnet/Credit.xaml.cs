@@ -42,7 +42,7 @@ namespace Testiamte
 
             for (int i = 0; i < 5; i++)
             {
-                Util.CaptureWindowWrapper(webView);
+                await Util.CaptureWindowWrapper(webView);
                 await Task.Delay(2000);
             }
 

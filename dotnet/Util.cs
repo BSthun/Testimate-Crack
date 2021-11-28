@@ -85,8 +85,10 @@ namespace Testimate
             return bmp;
         }
 
-        public static string CaptureWindowToFile(IntPtr handle, WebView2 webview)
+        public static async Task<string> CaptureWindowWrapper(WebView2 webview)
         {
+            IntPtr handle = WinGetHandle();
+
             string str = Path.Combine(Path.GetTempPath(), "Testimate", "Screenshots");
             if (!Directory.Exists(str))
                 Directory.CreateDirectory(str);
@@ -101,11 +103,11 @@ namespace Testimate
 
             // Method 2: Window region
             System.Drawing.Image img = CaptureWindowRegion(handle);
-            OverlayWebview(filename, img, webview);
+            await OverlayWebview(filename, img, webview);
             return filename;
         }
 
-        public static async void OverlayWebview(string filename, System.Drawing.Image window, WebView2 webview)
+        public static async Task<string> OverlayWebview(string filename, System.Drawing.Image window, WebView2 webview)
         {
             string r3 = await webview.CoreWebView2.CallDevToolsProtocolMethodAsync("Page.captureScreenshot", "{}");
             JObject o3 = JObject.Parse(r3);
@@ -124,6 +126,7 @@ namespace Testimate
             System.Drawing.Image compResized = FixedSize(comp, 1280, 720);
 
             compResized.Save(filename, ImageFormat.Png);
+            return filename;
         }
 
         static System.Drawing.Image FixedSize(System.Drawing.Image imgPhoto, int Width, int Height)
@@ -174,12 +177,6 @@ namespace Testimate
 
             grPhoto.Dispose();
             return bmPhoto;
-        }
-
-        public static string CaptureWindowWrapper(WebView2 webview)
-        {
-            string wrap = CaptureWindowToFile(WinGetHandle(), webview);
-            return wrap;
         }
 
         public static IntPtr WinGetHandle(string wName = "MainWindow")
