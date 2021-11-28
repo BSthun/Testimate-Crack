@@ -126,6 +126,11 @@ namespace Testimate
             System.Drawing.Image compResized = FixedSize(comp, 1280, 720);
 
             compResized.Save(filename, ImageFormat.Png);
+
+            img.Dispose();
+            comp.Dispose();
+            compResized.Dispose();
+
             return filename;
         }
 

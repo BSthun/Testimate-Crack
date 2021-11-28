@@ -6,9 +6,15 @@
         xmlns:local="clr-namespace:Testiamte"
         Title="Testimate Crack" Height="192" Width="384" Icon="/testimate_fav-icon.png" ResizeMode="NoResize" Topmost="True">
     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-        <TextBlock Text="Cracked by BSthun" TextAlignment="Center"/>
-        <TextBlock Text="Credit to Floaty_KT, thetkpark, HyperactiveX" TextAlignment="Center"/>
-        <TextBlock Margin="10"><Hyperlink NavigateUri="https://github.com/BSthun/Testimate-Crack">https://github.com/BSthun/Testimate-Crack</Hyperlink></TextBlock>
+        <TextBlock TextAlignment="Center">Cracked by <Hyperlink NavigateUri="https://github.com/BSthun">BSthun</Hyperlink>.</TextBlock>
+        <TextBlock TextAlignment="Center">
+            Credit to 
+            <Hyperlink NavigateUri="https://github.com/Floaty_KT">Floaty_KT</Hyperlink>,
+            <Hyperlink NavigateUri="https://github.com/Mixko50">Mixko50</Hyperlink>,
+            <Hyperlink NavigateUri="https://github.com/thetkpark">thetkpark</Hyperlink>,
+            <Hyperlink NavigateUri="https://github.com/HyperactiveX">HyperactiveX</Hyperlink>.
+        </TextBlock>
+        <TextBlock/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <Button Margin="5" Width="106" Click="TestScreenshot_Click">
                 <TextBlock Text="Screenshot Test" />
